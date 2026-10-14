@@ -60,7 +60,7 @@ const UNIT_MODELS = [
   {cat:'Alat Support', code:'GENSET'},
   {cat:'Alat Support', code:'COMPRESSOR'},
   {cat:'Alat Support', code:'WELDING MACHINE'},
-  {cat:'Alat Support', code:'TOWER LAMP'}
+  {cat:'Alat Support', code:'TOWER LAMP'},
   {cat:'Alat Support', code:'MULTIFLOW'},
 ];
 
