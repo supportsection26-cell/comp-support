@@ -53,7 +53,6 @@ try{
 const UNIT_MODELS = [
   {cat:'Truck',        code:'WATER TRUCK'},
   {cat:'Truck',        code:'FUEL TRUCK'},
-  {cat:'Truck',        code:'MULTIFLOW'},
   {cat:'Truck',        code:'CRANE TRUCK'},
   {cat:'Truck',        code:'LUBE TRUCK'},
   {cat:'Alat Support', code:'FORKLIFT'},
@@ -62,6 +61,7 @@ const UNIT_MODELS = [
   {cat:'Alat Support', code:'COMPRESSOR'},
   {cat:'Alat Support', code:'WELDING MACHINE'},
   {cat:'Alat Support', code:'TOWER LAMP'}
+  {cat:'Alat Support', code:'MULTIFLOW'},
 ];
 
 // --- Koneksi Supabase (backend/database baru, pengganti Apps Script + Google Sheets) ---
