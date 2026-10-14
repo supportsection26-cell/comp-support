@@ -91,7 +91,7 @@ const SHOW_HIDDEN = window.location.hostname.includes('stock-spareparts');
 // Authentication > Users). Emailnya tidak rahasia (bukan password), jadi aman
 // ditulis di sini -- yang menjaga keamanan tetap password + aturan RLS di database.
 // GANTI email ini sesuai akun admin yang kamu buat di Supabase Dashboard.
-const ADMIN_EMAIL = 'admin@cetok.local';
+const ADMIN_EMAIL = 'supportsection26@gmail.com';
 let isAdmin = false;
 
 // Animasi pop-up: 'display' diubah dulu, baru class 'open' ditambahkan
