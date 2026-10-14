@@ -364,3 +364,9 @@
 .sheet-group{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);padding:12px 8px 4px;}
 .sheet-group:first-of-type{padding-top:6px;}
 @media (max-width:680px){ .filter-row{gap:6px;} .filter-btn{padding:10px 9px;font-size:12.5px;} }
+
+/* Picker kustom pengganti dropdown bawaan HP (unit di form + filter Riwayat) */
+.pick-native{display:none !important;}
+.field .pick-btn{width:100%;margin-top:5px;font-size:14px;}
+.filter-row .pick-btn{margin-top:0;}
+.pick-dot{width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0;}
