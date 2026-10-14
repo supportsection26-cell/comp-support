@@ -55,20 +55,17 @@
           <option value="NOT RFU">NOT RFU</option>
           <option value="EMPTY">Tanpa Status</option>
         </select>
+        <select id="stok_unit_filter"><option value="">Semua Unit</option></select>
         <button type="button" class="filter-btn" id="locBtn" data-for="stok_loc_filter" data-title="Filter Lokasi"><span class="fb-label">Semua Lokasi</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
         <button type="button" class="filter-btn" id="statusBtn" data-for="stok_status_filter" data-title="Filter Status"><span class="fb-label">Semua Status</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        <button type="button" class="filter-btn" id="unitBtn" data-for="stok_unit_filter" data-title="Filter Unit"><span class="fb-label">Semua Unit</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
       </div>
-      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;">
-        <div class="sheet-pills" id="pillsSemua" style="margin-bottom:0;"></div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:12px;">
         <button type="button" id="btnExportStok" class="btn btn-outline" style="display:flex;align-items:center;gap:6px;padding:8px 14px;font-size:12.5px;flex-shrink:0;">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M4 21h16"/></svg>
           Export Excel
         </button>
       </div>
-      <div class="cat-label">Truck</div>
-      <div class="sheet-pills" id="pillsTruck"></div>
-      <div class="cat-label">Alat Support</div>
-      <div class="sheet-pills" id="pillsSupport"></div>
       <div class="card">
         <table>
           <thead><tr><th>No</th><th>Parts Number</th><th>Parts Description</th><th class="unit-col">Unit</th><th>Status</th><th>Lokasi</th><th style="text-align:right;">Qty</th><th>Keterangan</th></tr></thead>
