@@ -370,22 +370,10 @@ function buildSelectors(){
     filterUnit.appendChild(opt);
   });
 
-  const pillsSemua = document.getElementById('pillsSemua');
-  const btnSemua = document.createElement('button');
-  btnSemua.textContent = 'Semua Unit'; btnSemua.dataset.code = 'ALL';
-  if(currentSheet==='ALL') btnSemua.classList.add('active');
-  btnSemua.onclick = ()=>{ currentSheet = 'ALL'; stokKosongOnly = false; stokPage = 1; renderStokSheet(); };
-  pillsSemua.appendChild(btnSemua);
-
-  const pillsExc = document.getElementById('pillsTruck');
-  const pillsBull = document.getElementById('pillsSupport');
-  UNIT_MODELS.forEach(u=>{
-    const btn = document.createElement('button');
-    btn.textContent = u.code; btn.dataset.code = u.code;
-    if(u.code===currentSheet) btn.classList.add('active');
-    btn.onclick = ()=>{ currentSheet = u.code; stokKosongOnly = false; stokPage = 1; renderStokSheet(); };
-    (u.cat==='Truck'?pillsExc:pillsBull).appendChild(btn);
-  });
+  // Filter unit (opsi B): select tersembunyi + tombol filter, sama seperti Lokasi/Status
+  const unitSel = document.getElementById('stok_unit_filter');
+  unitSel.innerHTML = '<option value="">Semua Unit</option>';
+  populateUnitSelectGrouped('stok_unit_filter');
 }
 // Dipakai buat isi <select id="in_unit">, dan dipakai ulang buat dropdown unit
 // di modal Edit Riwayat (er_unit).
@@ -441,16 +429,26 @@ function populateLocationFilter(){
 }
 document.getElementById('stok_loc_filter').addEventListener('change', ()=>{ stokPage = 1; renderStokSheet(); });
 document.getElementById('stok_status_filter').addEventListener('change', ()=>{ stokPage = 1; renderStokSheet(); });
+document.getElementById('stok_unit_filter').addEventListener('change', (e)=>{
+  currentSheet = e.target.value || 'ALL'; stokKosongOnly = false; stokPage = 1; renderStokSheet();
+});
 
 // ---------- Bottom-sheet filter (tampilan HP) ----------
 // <select> asli tetap jadi sumber nilai (dipakai semua logika filter & export);
 // di HP select disembunyikan dan diganti tombol + sheet yang lebih ringkas.
 function syncFilterButtons(){
-  [['stok_loc_filter','locBtn'],['stok_status_filter','statusBtn']].forEach(([selId,btnId])=>{
+  const unitSel = document.getElementById('stok_unit_filter');
+  if(unitSel){
+    unitSel.value = currentSheet==='ALL' ? '' : currentSheet;
+    if(unitSel.value !== (currentSheet==='ALL' ? '' : currentSheet)) unitSel.value = '';
+  }
+  [['stok_loc_filter','locBtn'],['stok_status_filter','statusBtn'],['stok_unit_filter','unitBtn']].forEach(([selId,btnId])=>{
     const sel = document.getElementById(selId), btn = document.getElementById(btnId);
     if(!sel || !btn) return;
     const opt = sel.selectedOptions[0];
-    btn.querySelector('.fb-label').textContent = opt ? opt.textContent : '';
+    const shortLbl = {stok_loc_filter:'Lokasi', stok_status_filter:'Status', stok_unit_filter:'Unit'}[selId];
+    const isHp = window.matchMedia('(max-width:680px)').matches;
+    btn.querySelector('.fb-label').textContent = (!sel.value && isHp && shortLbl) ? shortLbl : (opt ? opt.textContent : '');
     btn.classList.toggle('active', !!sel.value);
   });
 }
@@ -459,23 +457,31 @@ const isDesktopFilter = ()=>window.matchMedia('(min-width:681px)').matches;
 function openFilterSheet(btn){
   const selId = btn.dataset.for, title = btn.dataset.title;
   const sel = document.getElementById(selId);
-  const isLoc = selId === 'stok_loc_filter';
+  const kind = selId === 'stok_loc_filter' ? 'loc' : selId === 'stok_unit_filter' ? 'unit' : 'status';
   filterSheetSel = sel;
   filterSheetBtn = btn;
   // Jumlah part per opsi, mengikuti filter lain yang sedang aktif
-  const rows = getFilteredStokRows(isLoc ? {loc:true} : {status:true});
+  const rows = getFilteredStokRows({[kind]:true});
   const counts = new Map();
   rows.forEach(p=>{
-    const k = isLoc ? (p.loc||'').trim().toLowerCase() : (p.status ? String(p.status).toUpperCase() : 'EMPTY');
+    const k = kind==='loc' ? (p.loc||'').trim().toLowerCase()
+            : kind==='unit' ? (p.unit||'')
+            : (p.status ? String(p.status).toUpperCase() : 'EMPTY');
     counts.set(k, (counts.get(k)||0) + 1);
   });
   document.getElementById('filterSheetTitle').textContent = title;
-  document.getElementById('filterSheetList').innerHTML = [...sel.options].map(o=>{
+  const itemHtml = o=>{
     const n = o.value === '' ? rows.length : (counts.get(o.value)||0);
-    const label = (!isLoc && (o.value==='RFU' || o.value==='NOT RFU')) ? statusBadge(o.value) : esc(o.textContent);
+    const label = (kind==='status' && (o.value==='RFU' || o.value==='NOT RFU')) ? statusBadge(o.value) : esc(o.textContent);
     const cls = 'sheet-item' + (o.value===sel.value ? ' active' : '') + (n===0 && o.value!=='' ? ' zero' : '');
     return `<div class="${cls}" role="option" data-val="${esc(o.value)}"><span>${label}</span><span class="cnt">${n}</span></div>`;
-  }).join('');
+  };
+  // <optgroup> (dropdown unit) ditampilkan sebagai judul grup
+  document.getElementById('filterSheetList').innerHTML = [...sel.children].map(el=>
+    el.tagName === 'OPTGROUP'
+      ? `<div class="sheet-group">${esc(el.label)}</div>` + [...el.children].map(itemHtml).join('')
+      : itemHtml(el)
+  ).join('');
   const ov = document.getElementById('filterSheet');
   const sheet = ov.querySelector('.sheet');
   if(isDesktopFilter()){
@@ -503,7 +509,7 @@ function closeFilterSheet(){
   if(filterSheetBtn) filterSheetBtn.setAttribute('aria-expanded','false');
   setTimeout(()=>{ if(!ov.classList.contains('open')) ov.style.display = 'none'; }, 240);
 }
-['locBtn','statusBtn'].forEach(id=>{
+['locBtn','statusBtn','unitBtn'].forEach(id=>{
   const btn = document.getElementById(id);
   btn.setAttribute('aria-expanded','false');
   btn.addEventListener('click', ()=>{
@@ -519,7 +525,7 @@ window.addEventListener('scroll', (e)=>{
   if(e.target && e.target.nodeType===1 && e.target.closest('#filterSheetList')) return;
   closeFilterSheet();
 }, true);
-window.addEventListener('resize', ()=>{ if(isDesktopFilter()) closeFilterSheet(); });
+window.addEventListener('resize', ()=>{ if(isDesktopFilter()) closeFilterSheet(); syncFilterButtons(); });
 document.getElementById('filterSheetList').addEventListener('click', (e)=>{
   const item = e.target.closest('.sheet-item');
   if(!item || !filterSheetSel) return;
@@ -534,7 +540,7 @@ document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeFilterShee
 function getFilteredStokRows(skip){
   skip = skip || {};
   const q = document.getElementById('stok_search').value.trim().toLowerCase();
-  let rows = currentSheet==='ALL' ? [...parts] : parts.filter(p=>p.unit===currentSheet);
+  let rows = (currentSheet==='ALL' || skip.unit) ? [...parts] : parts.filter(p=>p.unit===currentSheet);
   if(q){
     rows = rows.filter(p=>p.pn.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q));
   }
