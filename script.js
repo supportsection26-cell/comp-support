@@ -51,14 +51,17 @@ try{
 
 // --- Daftar unit model: hardcode di sisi client, tidak perlu tunggu server ---
 const UNIT_MODELS = [
-  {cat:'Excavator', code:'PC2000-11R'},
-  {cat:'Excavator', code:'PC1250SP-11'},
-  {cat:'Excavator', code:'CAT395'},
-  {cat:'Excavator', code:'PC500LC-10R'},
-  {cat:'Excavator', code:'PC210-10MO'},
-  {cat:'Bulldozer', code:'D375A-6R'},
-  {cat:'Bulldozer', code:'D155A-6R'},
-  {cat:'Bulldozer', code:'D85ESS-2'}
+  {cat:'Truck',        code:'WATER TRUCK'},
+  {cat:'Truck',        code:'FUEL TRUCK'},
+  {cat:'Truck',        code:'MULTIFLOW'},
+  {cat:'Truck',        code:'CRANE TRUCK'},
+  {cat:'Truck',        code:'LUBE TRUCK'},
+  {cat:'Alat Support', code:'FORKLIFT'},
+  {cat:'Alat Support', code:'TYRE HANDLER'},
+  {cat:'Alat Support', code:'GENSET'},
+  {cat:'Alat Support', code:'COMPRESSOR'},
+  {cat:'Alat Support', code:'WELDING MACHINE'},
+  {cat:'Alat Support', code:'TOWER LAMP'}
 ];
 
 // --- Koneksi Supabase (backend/database baru, pengganti Apps Script + Google Sheets) ---
@@ -71,8 +74,8 @@ const UNIT_MODELS = [
 // Key ini MEMANG untuk dipasang di frontend/publik — bukan rahasia seperti password.
 // Yang menjaga keamanan adalah aturan RLS + fungsi database (lihat schema.sql).
 // JANGAN pernah pasang "Secret key" (sb_secret_...) atau "service_role" di sini.
-const SUPABASE_URL = 'https://zdmlydqxvtvuktcfijzx.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkbWx5ZHF4dnR2dWt0Y2Zpanp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMjE2NTksImV4cCI6MjEwMjY5NzY1OX0.HbZY03oiDZ9J7RkakbtVR3S3Dze89ttd2NbLQkqGYPY';
+const SUPABASE_URL = 'https://adzitieldsqdszrffkpv.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFkeml0aWVsZHNxZHN6cmZma3B2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5ODAzMTIsImV4cCI6MjEwNzU1NjMxMn0.0dCK_2coS2wsWRIwjV22p0mRKEil0AsnYBD4tC4TpHo';
 // Dinamai "sb" (bukan "supabase") karena library supabase-js versi CDN ini
 // sudah otomatis membuat variabel global bernama "supabase" -- pakai nama sama
 // akan bentrok dan bikin SELURUH javascript di halaman berhenti jalan.
@@ -374,25 +377,25 @@ function buildSelectors(){
   btnSemua.onclick = ()=>{ currentSheet = 'ALL'; stokKosongOnly = false; stokPage = 1; renderStokSheet(); };
   pillsSemua.appendChild(btnSemua);
 
-  const pillsExc = document.getElementById('pillsExcavator');
-  const pillsBull = document.getElementById('pillsBulldozer');
+  const pillsExc = document.getElementById('pillsTruck');
+  const pillsBull = document.getElementById('pillsSupport');
   UNIT_MODELS.forEach(u=>{
     const btn = document.createElement('button');
     btn.textContent = u.code; btn.dataset.code = u.code;
     if(u.code===currentSheet) btn.classList.add('active');
     btn.onclick = ()=>{ currentSheet = u.code; stokKosongOnly = false; stokPage = 1; renderStokSheet(); };
-    (u.cat==='Excavator'?pillsExc:pillsBull).appendChild(btn);
+    (u.cat==='Truck'?pillsExc:pillsBull).appendChild(btn);
   });
 }
 // Dipakai buat isi <select id="in_unit">, dan dipakai ulang buat dropdown unit
 // di modal Edit Riwayat (er_unit).
 function populateUnitSelectGrouped(selectId){
   const sel = document.getElementById(selectId);
-  const excGroup = document.createElement('optgroup'); excGroup.label='Excavator';
-  const bullGroup = document.createElement('optgroup'); bullGroup.label='Bulldozer';
+  const excGroup = document.createElement('optgroup'); excGroup.label='Truck';
+  const bullGroup = document.createElement('optgroup'); bullGroup.label='Alat Support';
   UNIT_MODELS.forEach(u=>{
     const opt = document.createElement('option'); opt.value=u.code; opt.textContent=u.code;
-    (u.cat==='Excavator'?excGroup:bullGroup).appendChild(opt);
+    (u.cat==='Truck'?excGroup:bullGroup).appendChild(opt);
   });
   sel.appendChild(excGroup); sel.appendChild(bullGroup);
 }
