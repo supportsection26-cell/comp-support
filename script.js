@@ -51,6 +51,7 @@ try{
 
 // --- Daftar unit model: hardcode di sisi client, tidak perlu tunggu server ---
 const UNIT_MODELS = [
+  {cat:'General',      code:'GENERAL'},
   {cat:'Truck',        code:'WATER TRUCK'},
   {cat:'Truck',        code:'FUEL TRUCK'},
   {cat:'Truck',        code:'CRANE TRUCK'},
@@ -63,6 +64,8 @@ const UNIT_MODELS = [
   {cat:'Alat Support', code:'TOWER LAMP'},
   {cat:'Alat Support', code:'MULTIFLOW'},
 ];
+// Urutan grup (General, Truck, Alat Support, ...) ikut urutan pertama muncul di UNIT_MODELS
+const UNIT_CATS = [...new Set(UNIT_MODELS.map(u=>u.cat))];
 
 // --- Koneksi Supabase (backend/database baru, pengganti Apps Script + Google Sheets) ---
 // SUPABASE_URL dan SUPABASE_PUBLISHABLE_KEY diambil dari:
@@ -364,28 +367,30 @@ function buildSelectors(){
   populateUnitSelectGrouped('in_unit');
   populateUnitSelectGrouped('er_unit');
 
-  const filterUnit = document.getElementById('filterUnit');
-  UNIT_MODELS.forEach(u=>{
-    const opt = document.createElement('option'); opt.value=u.code; opt.textContent=u.code;
-    filterUnit.appendChild(opt);
-  });
+  populateUnitSelectGrouped('filterUnit');
 
   // Filter unit (opsi B): select tersembunyi + tombol filter, sama seperti Lokasi/Status
   const unitSel = document.getElementById('stok_unit_filter');
   unitSel.innerHTML = '<option value="">Semua Unit</option>';
   populateUnitSelectGrouped('stok_unit_filter');
+
+  attachPicker('in_unit', 'Pilih Unit Model');
+  attachPicker('er_unit', 'Pilih Unit Model');
+  attachPicker('filterType', 'Filter Jenis', true);
+  attachPicker('filterUnit', 'Filter Unit', true);
 }
 // Dipakai buat isi <select id="in_unit">, dan dipakai ulang buat dropdown unit
 // di modal Edit Riwayat (er_unit).
 function populateUnitSelectGrouped(selectId){
   const sel = document.getElementById(selectId);
-  const excGroup = document.createElement('optgroup'); excGroup.label='Truck';
-  const bullGroup = document.createElement('optgroup'); bullGroup.label='Alat Support';
-  UNIT_MODELS.forEach(u=>{
-    const opt = document.createElement('option'); opt.value=u.code; opt.textContent=u.code;
-    (u.cat==='Truck'?excGroup:bullGroup).appendChild(opt);
+  UNIT_CATS.forEach(cat=>{
+    const g = document.createElement('optgroup'); g.label = cat;
+    UNIT_MODELS.filter(u=>u.cat===cat).forEach(u=>{
+      const opt = document.createElement('option'); opt.value=u.code; opt.textContent=u.code;
+      g.appendChild(opt);
+    });
+    sel.appendChild(g);
   });
-  sel.appendChild(excGroup); sel.appendChild(bullGroup);
 }
 
 function render(){
@@ -457,6 +462,7 @@ const isDesktopFilter = ()=>window.matchMedia('(min-width:681px)').matches;
 function openFilterSheet(btn){
   const selId = btn.dataset.for, title = btn.dataset.title;
   const sel = document.getElementById(selId);
+  const plain = btn.dataset.plain === '1';
   const kind = selId === 'stok_loc_filter' ? 'loc' : selId === 'stok_unit_filter' ? 'unit' : 'status';
   filterSheetSel = sel;
   filterSheetBtn = btn;
@@ -473,8 +479,9 @@ function openFilterSheet(btn){
   const itemHtml = o=>{
     const n = o.value === '' ? rows.length : (counts.get(o.value)||0);
     const label = (kind==='status' && (o.value==='RFU' || o.value==='NOT RFU')) ? statusBadge(o.value) : esc(o.textContent);
-    const cls = 'sheet-item' + (o.value===sel.value ? ' active' : '') + (n===0 && o.value!=='' ? ' zero' : '');
-    return `<div class="${cls}" role="option" data-val="${esc(o.value)}"><span>${label}</span><span class="cnt">${n}</span></div>`;
+    const cls = 'sheet-item' + (o.value===sel.value ? ' active' : '') + (!plain && n===0 && o.value!=='' ? ' zero' : '');
+    const cnt = plain ? (o.value===sel.value ? '<span class="pick-dot"></span>' : '') : `<span class="cnt">${n}</span>`;
+    return `<div class="${cls}" role="option" data-val="${esc(o.value)}"><span>${label}</span>${cnt}</div>`;
   };
   // <optgroup> (dropdown unit) ditampilkan sebagai judul grup
   document.getElementById('filterSheetList').innerHTML = [...sel.children].map(el=>
@@ -534,6 +541,40 @@ document.getElementById('filterSheetList').addEventListener('click', (e)=>{
   closeFilterSheet();
 });
 document.getElementById('filterSheetClose').addEventListener('click', closeFilterSheet);
+
+// ---------- Picker kustom pengganti <select> bawaan HP ----------
+// <select> asli tetap ada (disembunyikan) dan tetap jadi sumber nilai, jadi
+// kode lain yang membaca/mengisi .value tidak perlu diubah. Label tombol
+// ikut berubah walau .value diisi dari kode (mis. saat buka Edit Riwayat).
+function attachPicker(selId, title, isFilter){
+  const sel = document.getElementById(selId);
+  if(!sel || sel.dataset.picker) return;
+  sel.dataset.picker = '1';
+  sel.classList.add('pick-native');
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'filter-btn pick-btn';
+  btn.dataset.for = selId; btn.dataset.title = title; btn.dataset.plain = '1';
+  btn.setAttribute('aria-expanded','false');
+  btn.innerHTML = '<span class="fb-label"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+  sel.insertAdjacentElement('afterend', btn);
+  const d = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+  const sync = ()=>{
+    const o = sel.selectedOptions[0];
+    btn.querySelector('.fb-label').textContent = o ? o.textContent : 'Pilih';
+    if(isFilter) btn.classList.toggle('active', !!d.get.call(sel));
+  };
+  Object.defineProperty(sel, 'value', { configurable:true,
+    get(){ return d.get.call(this); },
+    set(v){ d.set.call(this, v); sync(); } });
+  sel.addEventListener('change', sync);
+  btn.addEventListener('click', ()=>{
+    const ov = document.getElementById('filterSheet');
+    if(ov.classList.contains('open') && filterSheetBtn === btn){ closeFilterSheet(); return; }
+    openFilterSheet(btn);
+  });
+  sync();
+}
 document.getElementById('filterSheet').addEventListener('click', (e)=>{ if(e.target.id==='filterSheet') closeFilterSheet(); });
 document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeFilterSheet(); });
 
@@ -1240,7 +1281,7 @@ function paTransferHtml(p){
     <button type="button" class="btn btn-amber pa-submit" id="pa_submit" data-pa="submit-transfer" disabled>Pindahkan</button>`;
 }
 function paEditHtml(p){
-  const unitOpts = ['Excavator','Bulldozer'].map(cat=>`<optgroup label="${cat}">` +
+  const unitOpts = UNIT_CATS.map(cat=>`<optgroup label="${cat}">` +
     UNIT_MODELS.filter(u=>u.cat===cat).map(u=>`<option value="${esc(u.code)}" ${u.code===p.unit?'selected':''}>${esc(u.code)}</option>`).join('') + '</optgroup>').join('');
   const st = (p.status||'').toUpperCase();
   return `
@@ -1288,6 +1329,7 @@ function paRender(){
   body.innerHTML = paHeadHtml(p, v !== 'detail') + (views[v] || paDetailHtml)(p);
   body.scrollTop = 0;
   paBind(p);
+  attachPicker('pa_unit', 'Pilih Unit Model');
   // fokus ke judul (tidak memunculkan keyboard HP), pembaca layar tetap tahu konteksnya
   const t = document.getElementById('paTitle'); if(t) t.focus({ preventScroll:true });
 }
